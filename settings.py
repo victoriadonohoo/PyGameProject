@@ -8,11 +8,9 @@ class Settings:
         # dimensions of the game window (1200 pixels wide / 800 pixels high)
         self.screen_width = 1200 
         self.screen_height = 800 
-        
-        # color 
         self.bg_color = (230, 230, 230)
 
-        # speed of ship 
+        # Ship settings 
         self.ship_speed = 1.5 
 
         # Bullet Settings 
@@ -22,3 +20,12 @@ class Settings:
         self.bullet_color = (60, 60, 60)
         # limits the player to 3 bullets at a time 
         self.bullets_allowed = 3
+
+        # Alien settings 
+        self.alien_speed = 1.0 
+        # how quickly the fleet drops down the screen each time an alien reaches either edge 
+        self.fleet_drop_speed = 10 
+        # fleet direction of 1 represents right (addition to x coordinate value); -1 represents left (subtraction from x coordinate value)
+        # we dont use 'left' or 'right' because we would need if-elif statements testing direction 
+        # use 1 and -1 because there are only two directions 
+        self.fleet_direction = 1 
