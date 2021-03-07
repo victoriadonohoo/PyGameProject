@@ -2,6 +2,7 @@ import sys
 import pygame
 from settings import Settings
 from ship import Ship
+from bullet import Bullet
 
 class AlienInvasion:
     """Overall class to manage game assets and behavior."""
@@ -15,7 +16,12 @@ class AlienInvasion:
         # we assign an object (surface) to self.screen that formats the display window 
         # when the game's animation loop is activated by the run_game method the surface will be redrawn on every pass 
         #   through the loop based on user input. 
-        self.screen = pygame.display.set_mode((self.settings.screen_width, self.settings.screen_height))
+        # FULLSCREEN mode - tells pygame to figure out a windpw size that fills the screen 
+        self.screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
+        # update the settings object after the screen is created using the width and height attributes 
+        #   of the screens rect
+        self.settings.screen_width = self.screen.get_rect().width 
+        self.settings.screen_height = self.screen.get_rect().height
         pygame.display.set_caption("Alien Invasion")
 
         # assign the ship instance to self.ship 
@@ -23,9 +29,44 @@ class AlienInvasion:
         # this gives the ship access to the game's resources 
         self.ship = Ship(self)
 
+        #create the group to store bullets in 
+        self.bullets = pygame.sprite.Group()
+
         # set the background color to light grey
         self.bg_color = (230, 230, 230)
     # create check_events method to simplify run_game() and isolate the event management loop.
+
+    def _check_keydown_events(self, event):
+        """Respond to keypresses"""
+        # if user presses right arrow key, game moves the ship to the right 
+        if event.key == pygame.K_RIGHT:
+            #set moving_right to true (indirectly moves ship to the right)
+            self.ship.moving_right = True 
+        # if user presses left arrow key, game moves ship to the left 
+        elif event.key == pygame.K_LEFT:
+            # set moving_left to true
+            self.ship.moving_left = True
+        # press Q to exit 
+        elif event.key == pygame.K_q:
+            sys.exit()
+        # when space bar is pressed, we call _fire_bullet()
+        elif event.key == pygame.K_SPACE:
+            self._fire_bullet()
+
+    def _check_keyup_events(self, event):
+        # when the player releases the key, we set moving_right and moving_left to false
+        if event.key == pygame.K_RIGHT:
+            self.ship.moving_right = False
+        elif event.key == pygame.K_LEFT:
+            self.ship.moving_left = False
+
+    def _fire_bullet(self):
+        """Create a new bullet and add it to the bullets group."""
+        # create an instance of Bullet 
+        new_bullet = Bullet(self)
+        # add the instance to the bullets group
+        self.bullets.add(new_bullet)
+
     def _check_events(self):
         """Respond to keypresses and mouse events."""
         #  the event loop makes our program respond to events and perform appropriate tasks depending on the 
@@ -40,28 +81,23 @@ class AlienInvasion:
                 sys.exit()
             # checks if user pressed keys 
             elif event.type == pygame.KEYDOWN:
-                # if user presses right arrow key, game moves the ship to the right 
-                if event.key == pygame.K_RIGHT:
-                    # set moving_right to true (indirectly moves ship to the right)
-                    self.ship.moving_right = True 
-                # if user presses left arrow key, game moves ship to the left 
-                elif event.key == pygame.K_LEFT:
-                    # set moving_left to true
-                    self.ship.moving_left = True
-            # when the player releases the key, we set moving_right and moving_left to false
+                self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_RIGHT:
-                    self.ship.moving_right = False
-                elif event.key == pygame.K_LEFT:
-                    self.ship.moving_left = False
-
+                self._check_keyup_events(event)
+    
     def _update_screen(self):
         """Update images on the screen, and flip to the new screen"""
         # redraw the screen during each pass through the loop - argument is from the settings class
         self.screen.fill(self.settings.bg_color)
+        
         # placed here so image appears on top of the background 
         # draw the ship on the screen 
         self.ship.blitme()
+
+        # loop through the sprites in bullets and call draw_bullet() on each one
+        for bullet in self.bullets.sprites():
+            bullet.draw_bullet()
+
         # make the most recently drawn screen visible - display is updated continuously to show the new positions of the game 
         #   and hide old ones, creating illusion of smooth movement
         pygame.display.flip()
@@ -74,6 +110,8 @@ class AlienInvasion:
             self._check_events()
             # call update method from ship file 
             self.ship.update()
+            # call update ship method 
+            self.bullets.update()
             # call update events method
             self._update_screen()
 if __name__ == '__main__':
