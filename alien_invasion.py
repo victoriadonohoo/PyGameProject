@@ -62,10 +62,11 @@ class AlienInvasion:
 
     def _fire_bullet(self):
         """Create a new bullet and add it to the bullets group."""
-        # create an instance of Bullet 
-        new_bullet = Bullet(self)
-        # add the instance to the bullets group
-        self.bullets.add(new_bullet)
+        if  len(self.bullets) < self.settings.bullets_allowed:
+            # create an instance of Bullet 
+            new_bullet = Bullet(self)
+            # add the instance to the bullets group
+            self.bullets.add(new_bullet)
 
     def _check_events(self):
         """Respond to keypresses and mouse events."""
@@ -102,6 +103,22 @@ class AlienInvasion:
         #   and hide old ones, creating illusion of smooth movement
         pygame.display.flip()
 
+    def _update_bullets(self):
+        """Update position of bullets and get rid of old bullets."""
+        # Update bullet positions 
+        # call update ship method 
+        self.bullets.update()
+        # get rid of bullets that disappeared 
+        # allows us to modify bullets inside the loop
+        for bullet in self.bullets.copy():
+            # check if the bullet has disappeared 
+            if bullet.rect.bottom <= 0:
+                # if it has we remove it from bullets
+                self.bullets.remove(bullet)
+            # print how many bullets currently exist in the game and verify that they're being deleted when they reach the 
+            #   top of the screen 
+        print(len(self.bullets))
+
     def run_game(self):
         """Start the main loop for the game."""
         # run_game() method controls the game and the while loop will run continuously 
@@ -110,8 +127,8 @@ class AlienInvasion:
             self._check_events()
             # call update method from ship file 
             self.ship.update()
-            # call update ship method 
-            self.bullets.update()
+            # call update bullets method 
+            self._update_bullets()
             # call update events method
             self._update_screen()
 if __name__ == '__main__':
