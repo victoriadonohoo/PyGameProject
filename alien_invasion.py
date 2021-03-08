@@ -1,6 +1,8 @@
 import sys 
+from time import sleep 
 import pygame
 from settings import Settings
+from game_stats import GameStats 
 from ship import Ship
 from bullet import Bullet
 from alien import Alien 
@@ -24,6 +26,9 @@ class AlienInvasion:
         self.settings.screen_width = self.screen.get_rect().width 
         self.settings.screen_height = self.screen.get_rect().height
         pygame.display.set_caption("Alien Invasion")
+
+        # create an instance to store game statistics 
+        self.stats = GameStats(self)
 
         # assign the ship instance to self.ship 
         # the argument self refers to the current instance of AlienInvasion
@@ -123,10 +128,26 @@ class AlienInvasion:
             if bullet.rect.bottom <= 0:
                 # if it has we remove it from bullets
                 self.bullets.remove(bullet)
-            # print how many bullets currently exist in the game and verify that they're being deleted when they reach the 
-            #   top of the screen 
+        # print how many bullets currently exist in the game and verify that they're being deleted when they reach the 
+        #   top of the screen 
         print(len(self.bullets))
-    
+        self._check_bullet_alien_collisions()
+
+
+    def _check_bullet_alien_collisions(self):
+        """Respond to bullet-alien collisions."""
+        # check for any bullets that have hit any aliens 
+        # if so, get rid of the bullet and the alien 
+        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+
+        # check if the aliens group is empty 
+        # it is empty if it evaluates to false 
+        if not self.aliens:
+            # destroy existing bullets and create new fleet 
+            self.bullets.empty()
+            self._create_fleet()
+
+
     def _create_fleet(self):
         """Create the fleet of aliens."""
         # create an alien and find the number of aliens in a row
@@ -163,8 +184,50 @@ class AlienInvasion:
         self.aliens.add(alien)
 
     def _update_aliens(self):
-        """Update the positions of all aliens in the fleet."""
+        """Check if the fleet is at an edge, 
+                then update the positions of all aliens in the fleet. """
+        self._check_fleet_edges()
         self.aliens.update()
+
+        # loops through the group aliens and returns the first alien it finds that has collided with the ship 
+        # if no collisions occur, spritecollideany() returns None and if block does not execute 
+        if pygame.sprite.spritecollideany(self.ship, self.aliens):
+            self._ship_hit()
+
+    def _check_fleet_edges(self):
+        """Respond appropriately if any aliens have reached an edge."""
+        # loop through the fleet and call check_edges() on each alien 
+        for alien in self.aliens.sprites():
+            # if aliens have reached the edge, the whole fleet changes direction
+            # if so, call _change_fleet_direction and break out of the loop 
+            if alien.check_edges():
+                self._change_fleet_direction()
+                break 
+
+    def _change_fleet_direction(self):
+        """Drop the entire fleet and change the fleet's direction."""
+        # loop through all aliens and drop each one using the setting fleet_drop_speed 
+        for alien in self.aliens.sprites():
+            alien.rect.y += self.settings.fleet_drop_speed 
+        # change the value of the fleet_direction by multiplying its current value by -1 
+        # not a part of the for loop because we only want to change the direction of the fleet once 
+        self.settings.fleet_direction *= -1 
+
+    def _ship_hit(self):
+            """Respond to the ship being hit by an alien. """
+            # decrement ships_left 
+            self.stats.ships_left -= 1
+
+            # get rid of any remaining aliens and bullets 
+            self.aliens.empty()
+            self.bullets.empty()
+
+            # create a new fleet and center the ship 
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # pause before elements are changed for half a second 
+            sleep(0.5)
 
     def run_game(self):
         """Start the main loop for the game."""
@@ -184,3 +247,4 @@ if __name__ == '__main__':
     # make a game instance, and run the game. 
     ai = AlienInvasion()
     ai.run_game()
+

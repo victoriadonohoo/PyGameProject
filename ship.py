@@ -56,5 +56,14 @@ class Ship:
         """Draw the ship at its current location."""
         # draws the image to the screen at the specified position of self.rect
         self.screen.blit(self.image, self.rect)
+
+    def center_ship(self):
+        """Center the ship on the screen."""
+        self.rect.midbottom = self.screen_rect.midbottom 
+        # reset self.x attribute to track the ship's exact position 
+        self.x = float(self.rect.x)
+
+        # we don't make more than one ship, we just recenter the ship after it has been hit 
+        
         
 
