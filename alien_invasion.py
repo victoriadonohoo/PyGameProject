@@ -3,6 +3,7 @@ from time import sleep
 import pygame
 from settings import Settings
 from game_stats import GameStats 
+from scoreboard import Scoreboard
 from button import Button
 from ship import Ship
 from bullet import Bullet
@@ -29,7 +30,9 @@ class AlienInvasion:
         pygame.display.set_caption("Alien Invasion")
 
         # create an instance to store game statistics 
+        # and create scoreboard 
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
 
         # assign the ship instance to self.ship 
         # the argument self refers to the current instance of AlienInvasion
@@ -117,6 +120,17 @@ class AlienInvasion:
             # set game in active mode (play it )
             self.stats.game_active = True 
 
+            # resets the scoreboard with a 0 score 
+            self.sb.prep_score()
+
+            # resets level each time a new game starts 
+            # if a fleet is destroyed, we increment the value of stats.level and call prep_level() to make
+            #   sure new level displays properly 
+            self.sb.prep_level()
+
+            # show how many ships a player starts with 
+            self.sb.prep_ships()
+
             # get rid of any remaining aliens and bullets 
             self.aliens.empty()
             self.bullets.empty()
@@ -144,6 +158,9 @@ class AlienInvasion:
 
         # make an alien appear 
         self.aliens.draw(self.screen)
+
+        # draw the score information before we draw the play button 
+        self.sb.show_score()
 
         # draw the play button if the game is inactive 
         if not self.stats.game_active:
@@ -177,6 +194,18 @@ class AlienInvasion:
         # if so, get rid of the bullet and the alien 
         collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
 
+        # when a bullet hits an alien, pygame returns a collision dictionary
+        # here we check whether that exists and if so the aliens value is added to the score 
+        if collisions:
+            # if collisions dictionary has been defined we loop through all values in the dictionary to 
+            #   make sure all aliens hit are added to the score 
+            for aliens in collisions.values(): 
+                self.stats.score += self.settings.alien_points * len(aliens)
+            # call prep_score() to create a new image for score 
+            self.sb.prep_score()
+            # call check high score to each time an alien is hit after we update the score
+            self.sb.check_high_score()
+
         # check if the aliens group is empty 
         # it is empty if it evaluates to false 
         if not self.aliens:
@@ -184,6 +213,10 @@ class AlienInvasion:
             self.bullets.empty()
             self._create_fleet()
             self.settings.increase_speed()
+
+            # increase level 
+            self.stats.level += 1 
+            self.sb.prep_level()
 
     def _create_fleet(self):
         """Create the fleet of aliens."""
@@ -261,6 +294,8 @@ class AlienInvasion:
             if self.stats.ships_left > 0:
                 # decrement ships_left 
                 self.stats.ships_left -= 1
+                # update scoreboard 
+                self.sb.prep_ships()
 
                 # get rid of any remaining aliens and bullets 
                 self.aliens.empty()
